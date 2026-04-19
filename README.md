@@ -1,0 +1,1 @@
+# easylaundry.mn
