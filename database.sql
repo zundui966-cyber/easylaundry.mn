@@ -1,0 +1,49 @@
+﻿CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL CHECK(role IN ('user','admin'))
+);
+
+CREATE TABLE admins (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE dormitories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  paymentRequired BOOLEAN NOT NULL DEFAULT 1,
+  price INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE machines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dormitory_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  FOREIGN KEY(dormitory_id) REFERENCES dormitories(id) ON DELETE CASCADE
+);
+
+CREATE TABLE bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  dormitory_id INTEGER NOT NULL,
+  machine_id INTEGER NOT NULL,
+  slot TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  payment_required BOOLEAN NOT NULL,
+  paid BOOLEAN NOT NULL DEFAULT 0,
+  FOREIGN KEY(user_id) REFERENCES users(id),
+  FOREIGN KEY(dormitory_id) REFERENCES dormitories(id),
+  FOREIGN KEY(machine_id) REFERENCES machines(id)
+);
+
+CREATE TABLE payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL,
+  amount INTEGER NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('paid','unpaid')),
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+);

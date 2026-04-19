@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Easy Laundry — ХААИС Угаалгын Цаг Захиалга</title>
+<meta name="description" content="ХААИС-ийн дотуур байрны оюутнуудад зориулсан LG угаалгын машиний цаг захиалгын систем. QPay, карт, банк шилжүүлгээр төлөх боломжтой."/>
+<meta property="og:title" content="Easy Laundry — ХААИС Угаалгын Цаг Захиалга"/>
+<meta property="og:description" content="ХААИС-ийн 3 дотуур байрны LG угаалгын машиний ачаалалыг бодит цагаар шалгаад тохиромжтой цагаа урьдчилан захиалаарай."/>
+<meta property="og:image" content="https://easy-laundry.mn/og-image.png"/>
+<meta property="og:type" content="website"/>
+<link rel="canonical" href="https://easy-laundry.mn/"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#1B4FFF"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="format-detection" content="telephone=no"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.qpay.mn;">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧺</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="Style.css"/>
+</head>
+<!-- Security Modules -->
+<script src="security/passwordHash.js"></script>
+<script src="security/rateLimiter.js"></script>
+<script src="security/xssProtect.js"></script>
+<script src="security/headers.js"></script>
+<script src="security/sessionManager.js"></script>
+<body>
+
+<!-- SKIP TO CONTENT -->
+<a href="#booking" class="skip-link">Үндсэн агуулга руу очих</a>
+
+<!-- PAGE TRANSITION -->
+<div class="page-transition" id="pageTransition" aria-hidden="true">
+  <div class="pt-panel"></div><div class="pt-panel"></div>
+  <div class="pt-panel"></div><div class="pt-panel"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('authModal')" aria-label="Модалыг хаах">✕</button>
+    <div class="modal-logo">
+      <div class="nav-logo-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0014 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 01-11.91 4.97"/></svg>
+      </div>
+      <span class="modal-logo-text" id="authModalTitle">Easy Laundry</span>
+    </div>
+    <div class="modal-tabs" role="tablist">
+      <button class="modal-tab active" role="tab" aria-selected="true" onclick="switchTab('login')">Нэвтрэх</button>
+      <button class="modal-tab" role="tab" aria-selected="false" onclick="switchTab('register')">Бүртгүүлэх</button>
+    </div>
+    <div id="login-form" role="tabpanel">
+      <div class="form-field">
+        <label for="login-email">ИМЭЙЛ ХАЯГ</label>
+        <input type="email" id="login-email" placeholder="you@muls.edu.mn" autocomplete="email"/>
+        <div class="field-error" id="login-email-err" role="alert">Имэйл хаяг оруулна уу</div>
+      </div>
+      <div class="form-field">
+        <label for="login-pass">НУУЦ ҮГ</label>
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"/>
+        <div class="field-error" id="login-pass-err" role="alert">Нууц үг оруулна уу</div>
+      </div>
+      <button class="btn-auth" onclick="handleLogin()">Нэвтрэх →</button>
+      <div class="auth-divider">эсвэл</div>
+      <button class="auth-google" onclick="handleGoogleAuth()">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+        Google-ээр нэвтрэх
+      </button>
+    </div>
+    <div id="register-form" style="display:none" role="tabpanel">
+      <div class="form-row2">
+        <div class="form-field">
+          <label for="reg-fname">НЭР</label>
+          <input type="text" id="reg-fname" placeholder="Болд" autocomplete="given-name"/>
+          <div class="field-error" id="reg-fname-err" role="alert">Нэр оруулна уу</div>
+        </div>
+        <div class="form-field">
+          <label for="reg-lname">ОВОГ</label>
+          <input type="text" id="reg-lname" placeholder="Баатар" autocomplete="family-name"/>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="reg-email">ИМЭЙЛ ХАЯГ</label>
+        <input type="email" id="reg-email" placeholder="you@muls.edu.mn" autocomplete="email"/>
+        <div class="field-error" id="reg-email-err" role="alert">Зөв имэйл оруулна уу</div>
+      </div>
+      <div class="form-field">
+        <label for="reg-pass">НУУЦ ҮГ</label>
+        <input type="password" id="reg-pass" placeholder="Хамгийн багадаа 8 тэмдэгт" autocomplete="new-password"/>
+        <div class="field-error" id="reg-pass-err" role="alert">8-аас дээш тэмдэгт оруулна уу</div>
+      </div>
+      <button class="btn-auth" onclick="handleRegister()">Бүртгүүлэх →</button>
+    </div>
+  </div>
+</div>
+<!-- CANCEL CONFIRM MODAL -->
+<div class="modal-overlay" id="cancelModal" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+  <div class="cancel-modal">
+    <div style="font-size:2.5rem;margin-bottom:16px;" aria-hidden="true">⚠️</div>
+    <h2 id="cancelModalTitle" style="font-size:1.4rem;margin-bottom:8px;">Захиалга цуцлах уу?</h2>
+    <p style="font-size:.88rem;color:var(--muted);line-height:1.7;margin-bottom:28px;">Энэ үйлдлийг буцаах боломжгүй. Захиалсан цаг чөлөөлөгдөх болно.</p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn-cancel" onclick="closeModal('cancelModal')" style="margin:0;">Болих</button>
+      <button class="btn-confirm" onclick="confirmCancel()" style="margin:0;">Тийм, цуцлах</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CARD NAV -->
+<!-- CARD NAV -->
+<div class="card-nav-container" id="cardNavContainer">
+  <nav class="card-nav" id="mainNav" role="navigation" aria-label="Үндсэн навигаци">
+
+    <!-- TOP BAR -->
+    <div class="card-nav-top">
+      <!-- Hamburger -->
+      <div class="cn-hamburger" id="cnHamburger" onclick="cardNavToggle()"
+           role="button" tabindex="0" aria-label="Цэс нээх/хаах" aria-expanded="false">
+        <div class="cn-line"></div>
+        <div class="cn-line"></div>
+      </div>
+
+      <!-- Logo / Brand -->
+      <a class="cn-brand" href="#home" aria-label="Easy Laundry нүүр хуудас">
+        <div class="cn-logo-icon" aria-hidden="true"></div>
+        <span class="cn-logo-text">Easy Laundry</span>
+      </a>
+
+      <!-- Right actions -->
+      <div class="cn-actions">
+        <!-- User bar (logged in) -->
+        <div class="user-info-bar cn-user" id="userInfoBar">
+          <div class="user-avatar" id="userAvatar" aria-hidden="true">Б</div>
+          <span class="user-name" id="userName">Болд</span>
+          <button class="cn-logout-btn" onclick="logout()">Гарах</button>
+        </div>
+        <!-- Login btn -->
+        <button class="cn-login-btn" id="loginBtn" onclick="openModal('authModal')">Нэвтрэх</button>
+        <!-- CTA -->
+        <button class="cn-cta-btn" onclick="scrollToBooking()">Цаг захиалах →</button>
+      </div>
+    </div>
+
+    <!-- DROPDOWN CARDS -->
+    <div class="card-nav-content" id="cardNavContent" aria-hidden="true">
+
+      <div class="nav-card cn-card-1" id="cnCard0">
+        <div class="nav-card-label">Хаана</div>
+        <div class="nav-card-links">
+          <a class="nav-card-link" onclick="smoothNav('#how');cardNavClose()">
+            <svg class="nav-card-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            Хэрхэн ажилладаг
+          </a>
+          <a class="nav-card-link" onclick="smoothNav('#locations');cardNavClose()">
+            <svg class="nav-card-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            Байршлууд
+          </a>
+          <a class="nav-card-link" onclick="smoothNav('#services');cardNavClose()">
+            <svg class="nav-card-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            Үйлчилгээ
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-card cn-card-2" id="cnCard1">
+        <div class="nav-card-label">Захиалга</div>
+        <div class="nav-card-links">
+          <a class="nav-card-link" onclick="scrollToBooking();cardNavClose()">
+            <svg class="nav-card-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            Цаг захиалах
+          </a>
+          <a class="nav-card-link" onclick="openModal('authModal');cardNavClose()">
+            <svg class="nav-card-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            Нэвтрэх / Бүртгүүлэх
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-card cn-card-3" id="cnCard2">
+        <div class="nav-card-label">Холбоо</div>
+        <div class="nav-card-links">
+          <a class="nav-card-link" onclick="smoothNav('#contact');cardNavClose()">
+            <svg class="nav-card-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            Бидэнтэй холбогдох
+          </a>
+          <a class="nav-card-link" href="tel:+97688740577">
+            <svg class="nav-card-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            +976 8874-0577
+          </a>
+          <a href="mailto:6722010@muls.edu.mn">6722010@muls.edu.mn</a>
+        </div>
+      </div>
+
+    </div>
+  </nav>
+</div>
+
+<!-- HERO -->
+<section id="home" aria-label="Нүүр хэсэг">
+
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hero-mesh"></div>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+    <div class="hero-grid-lines"></div>
+    </div>
+  </div>
+  <div class="hero-wrapper">
+    <div class="hero-left">
+      <div class="hero-pill">
+        <span class="breathing-dot" aria-hidden="true"></span>
+        ХААИС-ийн оюутнуудад зориулсан
+      </div>
+      <h1>
+        <span class="word-reveal" style="--i:0">Угаалгын</span>
+        <span class="word-reveal accent" style="--i:1">цаг</span>
+        <br/>
+        <span class="word-reveal" style="--i:2">хялбар</span>
+        <span class="word-reveal accent2" style="--i:3">захиалах</span>
+      </h1>
+      <p class="hero-desc">ХААИС-ийн 3 дотуур байрны LG угаалгын машиний ачаалалыг бодит цагаар шалгаад тохиромжтой цагаа урьдчилан захиалаарай.</p>
+      <div class="hero-payment-badges">
+        <div class="hpb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg> QPay</div>
+        <div class="hpb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg> Карт</div>
+        <div class="hpb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><line x1="3" y1="22" x2="21" y2="22"/><line x1="3" y1="11" x2="21" y2="11"/><path d="M5 11V22M8 11V22M12 11V22M16 11V22M19 11V22"/><path d="M3 11L12 2l9 9"/></svg> Шилжүүлэг</div>
+        <div class="hpb-sep" aria-hidden="true">•</div>
+        <div class="hpb-item secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 2L4 6v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4z"/><polyline points="9 12 11 14 15 10"/></svg> Аюулгүй</div>
+      </div>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="scrollToBooking()">
+          <span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="7" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="11" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="15" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/></svg></span>
+          Цаг захиалах
+        </button>
+        <a class="btn-secondary" onclick="smoothNav('#how')" role="button" tabindex="0">Хэрхэн ажилладаг?</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><div class="stat-num" data-count="3">0</div><div class="stat-label">Дотуур байр</div></div>
+        <div class="stat"><div class="stat-num" data-count="8">0</div><div class="stat-label">LG Машин</div></div>
+        <div class="stat"><div class="stat-num" data-count="200">0</div><div class="stat-label">Оюутан хэрэглэгч</div></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-blob" aria-hidden="true"></div>
+      <div class="floating-badge fb1" aria-live="polite">
+        <span class="breathing-dot" aria-hidden="true"></span>
+        <span id="heroFreeText">5 машин чөлөөтэй</span>
+      </div>
+      <div class="floating-badge fb2" aria-hidden="true">⏱  50 мин угаалга</div>
+      <div class="live-card border-glow-card">
+        <div class="live-card-header">
+          <div class="live-card-title" id="heroCardTitle">🏢 ХААИС дотуур байр</div>
+          <div class="live-badge" aria-live="polite">
+            <div class="live-dot" aria-hidden="true"></div>
+            LIVE
+          </div>
+        </div>
+        <div id="heroMachineList" aria-label="Машины жагсаалт"></div>
+        <div class="live-footer">
+          <div class="live-footer-info">Бодит цагийн мэдээлэл</div>
+          <button class="btn-book-mini" onclick="scrollToBooking()">Захиалах →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- MARQUEE TICKER STRIP -->
+<div class="marquee-strip" aria-label="Үйлчилгээний мэдээлэл">
+  <div class="marquee-track">
+    <!-- First set of items -->
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>QPay дэмжигдсэн</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>SSL Аюулгүй</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>Карт · QPay · Шилжүүлэг</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>45 минутын угаалга</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>ХААИС 3 дотуур байр</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>QR кодоор нэвтрэх</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>2,000₮ нэг угаалга</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>LG Smart Choice 9кг</span>
+    </div>
+
+    <!-- Duplicate set for seamless loop -->
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>QPay дэмжигдсэн</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>SSL Аюулгүй</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>Карт · QPay · Шилжүүлэг</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>45 минутын угаалга</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>ХААИС 3 дотуур байр</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>2,000₮ нэг угаалга</span>
+    </div>
+    <div class="marquee-item">
+      <div class="marquee-dot" aria-hidden="true"></div>
+      <span>LG Smart Choice 9кг</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="mq-sep">✦</div>
+<section id="services" class="padded" aria-label="Үйлчилгээ">
+  <div class="container">
+    <div class="services-intro rv">
+      <div>
+        <div class="section-eyebrow"><span class="line" aria-hidden="true"></span> Үйлчилгээ</div>
+        <h2 class="section-h">Яагаад Easy Laundry?</h2>
+        <p class="section-sub">Цаг хэмнэ, дугаар эзэлнэ, машин чөлөөтэй байх үед л захиална.</p>
+      </div>
+    </div>
+    <div class="services-grid">
+      <div class="svc-card rv">
+      <span class="glow-edge-light" aria-hidden="true"></span>
+      <span class="glow-edge-light" aria-hidden="true"></span><div class="svc-num" aria-hidden="true">01</div><div class="svc-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg></div><h3>Бодит цагийн статус</h3><p>LG машинуудын ачаалалыг бодит цагаар шалгаж, чөлөөтэй машиныг шууд захиалах боломж.</p></div>
+      <div class="svc-card rv delay-1">
+      <span class="glow-edge-light" aria-hidden="true"></span>
+      <span class="glow-edge-light" aria-hidden="true"></span><div class="svc-num" aria-hidden="true">02</div><div class="svc-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="7" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="11" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="15" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/></svg></div><h3>Урьдчилан захиалах</h3><p>5 хоног хүртэл урьдчилан цаг захиалах боломжтой. Хуваарийнхаа дагуу угаал.</p></div>
+      <div class="svc-card rv delay-2">
+      <span class="glow-edge-light" aria-hidden="true"></span>
+      <span class="glow-edge-light" aria-hidden="true"></span><div class="svc-num" aria-hidden="true">03</div><div class="svc-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg></div><h3>QR кодоор нэвтрэх</h3><p>Захиалга баталгаажсаны дараа QR код авна. Машин дээр уншуулж, угаалгаа эхлүүлнэ.</p></div>
+      <div class="svc-card rv">
+      <span class="glow-edge-light" aria-hidden="true"></span>
+      <span class="glow-edge-light" aria-hidden="true"></span><div class="svc-num" aria-hidden="true">04</div><div class="svc-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg></div><h3>Олон аргаар төлөх</h3><p>QPay, Visa/Mastercard, эсвэл банк шилжүүлгээр хялбар, аюулгүй төлбөр хийх.</p></div>
+      <div class="svc-card rv delay-1">
+      <span class="glow-edge-light" aria-hidden="true"></span>
+      <span class="glow-edge-light" aria-hidden="true"></span><div class="svc-num" aria-hidden="true">05</div><div class="svc-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div><h3>Мэдэгдэл</h3><p>Захиалгын баталгаажилт, эхлэх ба дуусах цаг зэргийг мэдэгдлээр авна.</p></div>
+      <div class="svc-card rv delay-2">
+      <span class="glow-edge-light" aria-hidden="true"></span>
+      <span class="glow-edge-light" aria-hidden="true"></span><div class="svc-num" aria-hidden="true">06</div><div class="svc-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0014 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 01-11.91 4.97"/></svg></div><h3>LG Smart Машин</h3><p>9 кг, AI Direct Drive, Wi-Fi холболттой LG Smart Choice загварын машинууд.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="padded" aria-label="Хэрхэн ажилладаг">
+  <div class="how-bg" aria-hidden="true"></div>
+  <div class="container" style="position:relative;z-index:1;">
+    <div class="rv" style="text-align:center;max-width:600px;margin:0 auto 64px;">
+      <div class="section-eyebrow" style="justify-content:center;"><span class="line" aria-hidden="true"></span> Заавар</div>
+      <h2 class="section-h">4 алхамаар захиалах</h2>
+      <p class="section-sub" style="margin:0 auto;">Энгийн, хурдан, аюулгүй. Захиалга хийхэд 2 минут хүрэхгүй.</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-card rv"><div class="how-num-wrap" aria-hidden="true">1</div><span class="how-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></span><h3>Байр сонгох</h3><p>ХААИС-ийн 3 дотуур байраас өөрийн байршиж буй байрыг сонгоно уу.</p></div>
+      <div class="how-card rv delay-1"><div class="how-num-wrap" aria-hidden="true">2</div><span class="how-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0014 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 01-11.91 4.97"/></svg></span><h3>Машин сонгох</h3><p>Бодит цагийн статусаар чөлөөтэй LG машинаа сонгоно уу.</p></div>
+      <div class="how-card rv delay-2"><div class="how-num-wrap" aria-hidden="true">3</div><span class="how-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></span><h3>Цаг сонгох</h3><p>Таны хуваарьт тохирсон цагийн давхаргаас захиална уу.</p></div>
+      <div class="how-card rv delay-3"><div class="how-num-wrap" aria-hidden="true">4</div><span class="how-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg></span><h3>Төлөх & QR авах</h3><p>Төлбөр хийж, машин нэвтрэх QR кодоо хүлээн авна уу.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- LOCATIONS -->
+<section id="locations" class="padded" aria-label="Байршлууд">
+  <div class="container">
+    <div class="rv" style="text-align:center;max-width:600px;margin:0 auto 56px;">
+      <div class="section-eyebrow" style="justify-content:center;"><span class="line" aria-hidden="true"></span> Байршлууд</div>
+      <h2 class="section-h">ХААИС дотуур байрууд</h2>
+      <p class="section-sub" style="margin:0 auto;">3 дотуур байрт нийт 8 LG угаалгын машин байрлуулсан.</p>
+    </div>
+    <div class="location-branches-grid" id="locationBranchesGrid">
+      <div class="loc-branch-card rv border-glow-card" id="loc-branch-1">
+        <span class="glow-edge-light" aria-hidden="true"></span>
+        <div class="lbc-header">
+          <div class="lbc-icon" aria-hidden="true">🏢</div>
+          <div><div class="lbc-name">ХААИС — 1-р байр</div><div class="lbc-addr">Зайсан, Улаанбаатар</div></div>
+          <span class="lbc-badge active">Нээлттэй</span>
+        </div>
+        <div class="lbc-stats">
+          <div class="lmc-stat"><div class="lmc-stat-num">3</div><div class="lmc-stat-label">Машин</div></div>
+          <div class="lmc-stat"><div class="lmc-stat-num" id="free-1">2</div><div class="lmc-stat-label">Чөлөөтэй</div></div>
+        </div>
+        <div class="lbc-dots" id="dots-1" aria-label="Машины статус"></div>
+        <button class="btn-loc-book" onclick="selectLocationAndBook('1')">Цаг захиалах →</button>
+      </div>
+      <div class="loc-branch-card rv delay-1 border-glow-card" id="loc-branch-2">
+        <span class="glow-edge-light" aria-hidden="true"></span>
+        <div class="lbc-header">
+          <div class="lbc-icon" aria-hidden="true">🏛️</div>
+          <div><div class="lbc-name">ХААИС — 2-р байр</div><div class="lbc-addr">Зайсан, Улаанбаатар</div></div>
+          <span class="lbc-badge active">Нээлттэй</span>
+        </div>
+        <div class="lbc-stats">
+          <div class="lmc-stat"><div class="lmc-stat-num">2</div><div class="lmc-stat-label">Машин</div></div>
+          <div class="lmc-stat"><div class="lmc-stat-num" id="free-2">1</div><div class="lmc-stat-label">Чөлөөтэй</div></div>
+        </div>
+        <div class="lbc-dots" id="dots-2" aria-label="Машины статус"></div>
+        <button class="btn-loc-book" onclick="selectLocationAndBook('2')">Цаг захиалах →</button>
+      </div>
+      <div class="loc-branch-card rv delay-2 border-glow-card" id="loc-branch-3">
+        <span class="glow-edge-light" aria-hidden="true"></span>
+        <div class="lbc-header">
+          <div class="lbc-icon" aria-hidden="true">🏠</div>
+          <div><div class="lbc-name">ХААИС — 3-р байр</div><div class="lbc-addr">Зайсан, Улаанбаатар</div></div>
+          <span class="lbc-badge active">Нээлттэй</span>
+        </div>
+        <div class="lbc-stats">
+          <div class="lmc-stat"><div class="lmc-stat-num">3</div><div class="lmc-stat-label">Машин</div></div>
+          <div class="lmc-stat"><div class="lmc-stat-num" id="free-3">1</div><div class="lmc-stat-label">Чөлөөтэй</div></div>
+        </div>
+        <div class="lbc-dots" id="dots-3" aria-label="Машины статус"></div>
+        <button class="btn-loc-book" onclick="selectLocationAndBook('3')">Цаг захиалах →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- BOOKING -->
+<section id="booking" class="padded" aria-label="Цаг захиалах">
+  <div class="booking-bg" aria-hidden="true"></div>
+  <div class="container" style="position:relative;z-index:1;">
+    <div class="rv" style="text-align:center;max-width:600px;margin:0 auto 0;">
+      <div class="section-eyebrow" style="justify-content:center;"><span class="line" aria-hidden="true"></span> Захиалга</div>
+      <h2 class="section-h">Цаг захиалах</h2>
+      <p class="section-sub" style="margin:0 auto 16px;">ХААИС-ийн дотуур байрны LG угаалгын машиний цагаа захиалаарай.</p>
+    </div>
+    <div id="myBookingsSection" style="display:none;margin-top:32px;margin-bottom:32px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h3 style="font-size:1.1rem;font-weight:800;">📋 Миний захиалгууд</h3>
+        <button onclick="toggleMyBookings()" style="font-size:.82rem;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:700;font-family:'DM Sans',sans-serif;">Нуух ↑</button>
+      </div>
+      <div id="bookingListSkeleton" class="booking-skeleton" aria-hidden="true">
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      </div>
+      <div class="booking-list" id="bookingList" aria-live="polite"></div>
+    </div>
+    <div class="booking-layout-stepper rv">
+      <!-- STEPPER WRAPPER -->
+      <div class="stepper-outer border-glow-card" id="stepperOuter">
+        <span class="glow-edge-light" aria-hidden="true"></span>
+
+        <!-- Step indicator row (top) -->
+        <div class="stepper-indicator-row" id="stepperIndicatorRow" role="navigation" aria-label="Захиалгын алхамууд">
+
+  <div class="stepper-indicator" id="step-nav-1" onclick="goToStep(1)" role="button" tabindex="0" aria-label="1-р алхам: Байр сонгох">
+    <div class="stepper-circle active" id="sc-1">
+      <span class="sc-number">1</span>
+      <div class="sc-dot"></div>
+      <svg class="sc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <span class="stepper-label">Байр</span>
+  </div>
+
+  <div class="stepper-connector" id="sc-conn-1"><div class="sc-fill" id="scf-1"></div></div>
+
+  <div class="stepper-indicator" id="step-nav-2" onclick="goToStep(2)" role="button" tabindex="0" aria-label="2-р алхам: Машин сонгох">
+    <div class="stepper-circle" id="sc-2">
+      <span class="sc-number">2</span>
+      <div class="sc-dot"></div>
+      <svg class="sc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <span class="stepper-label">Машин</span>
+  </div>
+
+  <div class="stepper-connector" id="sc-conn-2"><div class="sc-fill" id="scf-2"></div></div>
+
+  <div class="stepper-indicator" id="step-nav-3" onclick="goToStep(3)" role="button" tabindex="0" aria-label="3-р алхам: Горим сонгох">
+    <div class="stepper-circle" id="sc-3">
+      <span class="sc-number">3</span>
+      <div class="sc-dot"></div>
+      <svg class="sc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <span class="stepper-label">Горим</span>
+  </div>
+
+  <div class="stepper-connector" id="sc-conn-3"><div class="sc-fill" id="scf-3"></div></div>
+
+  <div class="stepper-indicator" id="step-nav-4" onclick="goToStep(4)" role="button" tabindex="0" aria-label="4-р алхам: Цаг сонгох">
+    <div class="stepper-circle" id="sc-4">
+      <span class="sc-number">4</span>
+      <div class="sc-dot"></div>
+      <svg class="sc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <span class="stepper-label">Цаг</span>
+  </div>
+
+  <div class="stepper-connector" id="sc-conn-4"><div class="sc-fill" id="scf-4"></div></div>
+
+  <div class="stepper-indicator" id="step-nav-5" onclick="goToStep(5)" role="button" tabindex="0" aria-label="5-р алхам: Төлбөр">
+    <div class="stepper-circle" id="sc-5">
+      <span class="sc-number">5</span>
+      <div class="sc-dot"></div>
+      <svg class="sc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <span class="stepper-label">Төлбөр</span>
+  </div>
+
+</div><!-- /indicator-row -->
+
+        <!-- Slide content wrapper -->
+        <div class="stepper-content-wrap" id="stepperContentWrap">
+          <div class="booking-panel" id="bookingPanel" role="region" aria-live="polite" aria-label="Захиалгын хэсэг"></div>
+        </div>
+
+        <!-- Footer nav -->
+        <div class="stepper-footer" id="stepperFooter">
+          <div class="stepper-footer-nav" id="stepperFooterNav">
+            <button class="stepper-back-btn" id="stepperBackBtn" onclick="stepperBack()" aria-label="Өмнөх алхам">← Буцах</button>
+            <button class="stepper-next-btn" id="stepperNextBtn" onclick="stepperNext()" aria-label="Дараах алхам">Үргэлжлүүлэх →</button>
+          </div>
+        </div>
+
+      </div><!-- /stepper-outer -->
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="padded" aria-label="Холбоо барих">
+  <div class="contact-bg-orb" aria-hidden="true"></div>
+  <div class="container">
+    <div class="rv" style="text-align:center;max-width:600px;margin:0 auto;">
+      <div class="section-eyebrow" style="justify-content:center;"><span class="line" aria-hidden="true"></span> Холбоо барих</div>
+      <h2 class="section-h">Бидэнтэй холбогдоорой</h2>
+      <p class="section-sub" style="margin:0 auto;">Асуулт байвал эсвэл саналтай бол бидэнтэй холбоо баригтун.</p>
+    </div>
+    <div class="contact-layout">
+      <div class="contact-info-card rv">
+        <h3>Холбоо барих мэдээлэл</h3>
+        <p class="subtext">Бид ажлын өдрүүдэд 09:00–18:00 цагийн хооронд танд туслахад бэлэн.</p>
+        <div class="ci-item">
+          <div class="ci-icon-wrap" aria-hidden="true"><span class="ci-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></span></div>
+          <div><div class="ci-label">Имэйл</div><div class="ci-value"><a href="mailto:6722010@muls.edu.mn">6722010@muls.edu.mn</a></div></div>
+        </div>
+        <div class="ci-item">
+          <div class="ci-icon-wrap" aria-hidden="true"><span class="ci-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg></span></div>
+          <div><div class="ci-label">Утас</div><div class="ci-value"><a href="tel:+97688740577">+976 8874-0577</a></div></div>
+        </div>
+        <div class="ci-item">
+          <div class="ci-icon-wrap" aria-hidden="true"><span class="ci-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></span></div>
+          <div><div class="ci-label">Хаяг</div><div class="ci-value">ХААИС, Зайсан, Улаанбаатар</div></div>
+        </div>
+        <div class="ci-item">
+          <div class="ci-icon-wrap" aria-hidden="true"><span class="ci-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></span></div>
+          <div><div class="ci-label">Ажлын цаг</div><div class="ci-value">Даваа–Баасан: 09:00–18:00</div></div>
+        </div>
+        <div class="contact-qr-wrap">
+          <p>📱 Вэб сайт руу хурдан орох</p>
+          <div id="contactQR"></div>
+        </div>
+      </div>
+      <div class="contact-form-card rv delay-2">
+        <div class="contact-form-header">
+          <span class="cf-header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></span>
+          <h3>Мессеж илгээх</h3>
+        </div>
+        
+        <div class="form-grid">
+          <div class="cf-field"><label for="cf-name">НЭР</label><input type="text" id="cf-name" placeholder="Таны нэр" autocomplete="name"/></div>
+          <div class="cf-field"><label for="cf-contact">УТАС / ИМЭЙЛ</label><input type="text" id="cf-contact" placeholder="Холбоо барих" autocomplete="email"/></div>
+        </div>
+        <div class="cf-field"><label for="cf-msg">САНАЛ ХҮСЭЛТ</label><textarea id="cf-msg" placeholder="Та ямар асуулт, санал хүсэлттэй байна вэ?"></textarea></div>
+        <button class="btn-send" onclick="sendContact()">
+          <span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg> Илгээх
+        </button>
+        <p style="font-size:.75rem;color:var(--muted);margin-top:12px;">Эсвэл шууд имэйл: <a href="mailto:6722010@muls.edu.mn">6722010@muls.edu.mn</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer role="contentinfo">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="nav-brand" href="#home"><div class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="3" width="20" height="20" rx="3"/><circle cx="12" cy="13" r="4"/><circle cx="12" cy="13" r="1.5" fill="currentColor" stroke="none"/><line x1="7" y1="7" x2="8" y2="7" stroke-width="2.5"/><line x1="10" y1="7" x2="11" y2="7" stroke-width="2.5"/><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none"/></svg></div> Easy Laundry</a>
+        <p>ХААИС-ийн дотуур байрны оюутнуудад зориулсан угаалгын цаг захиалгын систем.</p>
+        <div class="footer-pay-badges">
+          <span class="fpb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg> QPay</span><span class="fpb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg> Visa</span><span class="fpb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg> MC</span><span class="fpb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><line x1="3" y1="22" x2="21" y2="22"/><line x1="3" y1="11" x2="21" y2="11"/><path d="M5 11V22M8 11V22M12 11V22M16 11V22M19 11V22"/><path d="M3 11L12 2l9 9"/></svg> Банк</span>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Навигаци</h4>
+        <a onclick="smoothNav('#home')">Нүүр</a>
+        <a onclick="smoothNav('#how')">Хэрхэн ажилладаг</a>
+        <a onclick="scrollToBooking()">Цаг захиалах</a>
+        <a onclick="smoothNav('#contact')">Холбоо барих</a>
+      </div>
+      <div class="footer-col">
+        <h4>Дотуур байрууд</h4>
+        <a onclick="scrollToBooking()">1-р байр</a>
+        <a onclick="scrollToBooking()">2-р байр</a>
+        <a onclick="scrollToBooking()">3-р байр</a>
+      </div>
+      <div class="footer-col">
+        <h4>Холбоо барих</h4>
+        <a href="mailto:6722010@muls.edu.mn">6722010@muls.edu.mn</a>
+        <a href="tel:+97688740577">+976 8874-0577</a>
+        <a href="#">Зайсан, Улаанбаатар</a>
+      </div>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-bottom">
+      <span>© 2026 Easy Laundry.</span>
+      <span class="footer-made">Made with ❤️ for <span>ХААИС оюутнуудад</span></span>
+      <div class="footer-secure">
+        <span class="footer-ssl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 2L4 6v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4z"/><polyline points="9 12 11 14 15 10"/></svg></span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- BOTTOM NAVIGATION (Mobile) -->
+<nav class="bottom-nav" id="bottomNav" aria-label="Гар утасны навигаци">
+  <div class="bottom-nav-inner">
+    <div class="bn-ink-indicator" id="bnInk" aria-hidden="true"></div>
+    <button class="bn-item active" id="bn-home" onclick="smoothNav('#home');setBnActive('home')" aria-label="Нүүр">
+      <span class="bn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></span>
+      <span class="bn-label">Нүүр</span>
+    </button>
+    <button class="bn-item" id="bn-how" onclick="smoothNav('#how');setBnActive('how')" aria-label="Заавар">
+      <span class="bn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></svg></span>
+      <span class="bn-label">Заавар</span>
+    </button>
+    <button class="bn-item bn-book" id="bn-booking" onclick="scrollToBooking();setBnActive('booking')" aria-label="Захиалга">
+      <span class="bn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="7" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="11" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="15" y="14" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/></svg></span>
+      <span class="bn-label">Захиалга</span>
+    </button>
+    <button class="bn-item" id="bn-contact" onclick="smoothNav('#contact');setBnActive('contact')" aria-label="Холбоо барих">
+      <span class="bn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg></span>
+      <span class="bn-label">Холбоо</span>
+    </button>
+  </div>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/InertiaPlugin.min.js"></script>
+<script src="Script.js"></script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Easy Laundry — Admin Panel</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="admin-style.css"/>
+<script src="https://cdn.lordicon.com/libs/mssddfmo/lord-icon-element.js"></script>
+</head>
+<body>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" role="dialog" aria-modal="true">
+  <div class="modal" id="detailModalContent">
+    <button class="modal-close" onclick="closeModal('detailModal')" aria-label="Хаах">✕</button>
+    <div id="detailModalBody"></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="formModal" role="dialog" aria-modal="true">
+  <div class="modal" id="formModalContent">
+    <button class="modal-close" onclick="closeModal('formModal')" aria-label="Хаах">✕</button>
+    <div id="formModalBody"></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-bg" aria-hidden="true"></div>
+  <div class="login-card" role="main">
+    <div class="login-logo">
+      <div class="login-logo-icon" aria-hidden="true">🧺</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="login-logo-text">Easy Laundry</span>
+          <span class="login-logo-badge">ADMIN</span>
+        </div>
+        <div style="font-size:.72rem;color:var(--text3);margin-top:2px;">Удирдлагын самбар</div>
+      </div>
+    </div>
+    <div class="login-title">Нэвтрэх</div>
+    <div class="login-sub">Зөвхөн эрх бүхий администраторуудад</div>
+    <!-- Login hint removed for production security. See admin-script.js -->
+    <div class="login-err" id="loginErr" role="alert">Имэйл эсвэл нууц үг буруу байна</div>
+    <div class="lf"><label for="adEmail">ИМЭЙЛ ХАЯГ</label><input type="email" id="adEmail" placeholder="admin@easylaundry.mn" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <div class="lf"><label for="adPass">НУУЦ ҮГ</label><input type="password" id="adPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn-login" onclick="doLogin()">Нэвтрэх →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Хажуугийн цэс">
+    <div class="sidebar-logo">
+      <div class="sb-logo-icon" aria-hidden="true">🧺</div>
+      <div>
+        <div class="sb-logo-text">Easy Laundry</div>
+        <div class="sb-logo-sub">Admin Panel v2.0</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Үндсэн</div>
+      <a class="nav-item active" onclick="navigate('dashboard')" href="#" aria-label="Хянах самбар"><span class="nav-icon" aria-hidden="true">📊</span><span class="nav-text">Хянах самбар</span></a>
+      <a class="nav-item" onclick="navigate('bookings')" href="#" aria-label="Захиалгууд"><span class="nav-icon" aria-hidden="true">📅</span><span class="nav-text">Захиалгууд</span><span class="nav-badge" id="pendingBadge">0</span></a>
+      <a class="nav-item" onclick="navigate('machines')" href="#" aria-label="Машинууд"><span class="nav-icon" aria-hidden="true">🫧</span><span class="nav-text">Машинууд</span><span class="nav-badge amber" id="machineBadge">0</span></a>
+      <a class="nav-item" onclick="navigate('machineModes')" href="#" aria-label="Машины горим"><span class="nav-icon" aria-hidden="true">⚙️</span><span class="nav-text">Машины горим</span></a>
+      <div class="nav-section-label">Удирдлага</div>
+      <a class="nav-item" onclick="navigate('users')" href="#"><span class="nav-icon" aria-hidden="true">👥</span><span class="nav-text">Хэрэглэгчид</span></a>
+      <a class="nav-item" onclick="navigate('locations')" href="#"><span class="nav-icon" aria-hidden="true">📍</span><span class="nav-text">Байршлууд</span></a>
+      <a class="nav-item" onclick="navigate('notifications')" href="#"><span class="nav-icon" aria-hidden="true">🔔</span><span class="nav-text">Мэдэгдэл</span><span class="nav-badge blue" id="notifBadge">3</span></a>
+      <a class="nav-item" onclick="navigate('contactMessages')" href="#"><span class="nav-icon" aria-hidden="true">✉️</span><span class="nav-text">Санал хүсэлт</span></a>
+      <div class="nav-section-label">Тайлан</div>
+      <a class="nav-item" onclick="navigate('analytics')" href="#"><span class="nav-icon" aria-hidden="true">📈</span><span class="nav-text">Аналитик</span></a>
+      <a class="nav-item" onclick="navigate('payments')" href="#"><span class="nav-icon" aria-hidden="true">💳</span><span class="nav-text">Төлбөр</span></a>
+      <a class="nav-item" onclick="navigate('settings')" href="#"><span class="nav-icon" aria-hidden="true">⚙️</span><span class="nav-text">Тохиргоо</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar" aria-hidden="true">А</div>
+        <div class="admin-info">
+          <div class="admin-name" id="adminName">Админ</div>
+          <div class="admin-role">Системийн администратор</div>
+        </div>
+        <button class="btn-logout-sb" onclick="doLogout()" aria-label="Гарах">Гарах</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" role="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button onclick="toggleSidebar()" class="menu-toggle-btn" id="menuBtn" aria-label="Цэс нээх/хаах">☰</button>
+        <div>
+          <div class="page-title" id="pageTitle">Хянах самбар</div>
+          <div class="page-subtitle" id="pageSubtitle">Easy Laundry удирдлагын самбар</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-live"><span class="dot" aria-hidden="true"></span> Бодит цаг</div>
+        <div class="topbar-time" id="clock" aria-live="polite">--:--:--</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row" id="dashStats"></div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-title">📅 Өдөр тутмын захиалга</div>
+            <div class="chart-sub">Сүүлийн 7 хоногийн мэдээлэл</div>
+            <div class="bar-chart" id="weekChart" aria-label="Долоо хоногийн захиалгын график"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🫧 Машины статус</div>
+            <div class="chart-sub">Бодит цагийн байдал</div>
+            <div class="donut-wrap">
+              <div class="donut" aria-hidden="true">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--surface3)" stroke-width="14"/>
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--green)"  stroke-width="14" stroke-dasharray="96 143"  stroke-dashoffset="0"   id="donutFree"/>
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--red)"    stroke-width="14" stroke-dasharray="48 191"  stroke-dashoffset="-96"  id="donutBusy"/>
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--amber)"  stroke-width="14" stroke-dasharray="24 215"  stroke-dashoffset="-144" id="donutSoon"/>
+                </svg>
+              </div>
+              <div class="donut-legend">
+                <div class="dl-item"><div class="dl-dot" style="background:var(--green)"></div><span class="dl-label">Чөлөөтэй</span><span class="dl-val" id="dlFree">—</span></div>
+                <div class="dl-item"><div class="dl-dot" style="background:var(--red)"></div><span class="dl-label">Ашиглагдаж байна</span><span class="dl-val" id="dlBusy">—</span></div>
+                <div class="dl-item"><div class="dl-dot" style="background:var(--amber)"></div><span class="dl-label">Удахгүй</span><span class="dl-val" id="dlSoon">—</span></div>
+                <div class="dl-item"><div class="dl-dot" style="background:var(--purple)"></div><span class="dl-label">Засвар</span><span class="dl-val" id="dlMaint">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">🕐 Сүүлийн захиалгууд</div>
+            <button class="btn-sm btn-ghost" onclick="navigate('bookings')">Бүгдийг харах →</button>
+          </div>
+          <div class="table-scroll">
+            <table><thead><tr><th>КОД</th><th>ХЭРЭГЛЭГЧ</th><th>БАЙРШИЛ</th><th>МАШИН</th><th>ЦАГ</th><th>СТАТУС</th><th>ҮЙЛДЭЛ</th></tr></thead>
+            <tbody id="recentBookingsTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOOKINGS -->
+      <div class="page" id="page-bookings">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">📅 Бүх захиалгууд</div>
+            <div class="table-actions">
+              <div class="search-box">🔍 <input type="search" id="bookingSearch" placeholder="Хайх..." oninput="filterBookings()" aria-label="Захиалга хайх"/></div>
+              <select class="filter-select" id="bookingFilter" onchange="filterBookings()" aria-label="Статусаар шүүх">
+                <option value="">Бүгд</option><option value="upcoming">Хүлээгдэж байна</option>
+                <option value="active">Идэвхтэй</option><option value="done">Дууссан</option><option value="cancelled">Цуцлагдсан</option>
+              </select>
+              <button class="btn-sm btn-ghost" onclick="exportBookings()">⬇ Экспорт</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table><thead><tr><th>КОД</th><th>ХЭРЭГЛЭГЧ</th><th>БАЙРШИЛ / МАШИН</th><th>ОГНОО & ЦАГ</th><th>СТАТУС</th><th>ҮЙЛДЭЛ</th></tr></thead>
+            <tbody id="allBookingsTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MACHINES -->
+      <div class="page" id="page-machines">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div></div>
+          <div style="display:flex;gap:10px;">
+            <select class="filter-select" id="machineLocFilter" onchange="filterMachines()" aria-label="Байршлаар шүүх"><option value="">Бүх байршил</option></select>
+            <button class="btn-sm btn-blue" onclick="openAddMachine()">+ Машин нэмэх</button>
+          </div>
+        </div>
+        <div class="cards-grid" id="machineCards"></div>
+      </div>
+
+      <!-- MACHINE MODES -->
+      <div class="page" id="page-machineModes">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-sm btn-blue" onclick="openAddMachineMode()">+ Горим нэмэх</button>
+          </div>
+        </div>
+        <div class="cards-grid" id="machineModeCards"></div>
+      </div>
+
+      <!-- USERS -->
+      <div class="page" id="page-users">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">👥 Хэрэглэгчид</div>
+            <div class="table-actions">
+              <div class="search-box">🔍 <input type="search" id="userSearch" placeholder="Хэрэглэгч хайх..." oninput="filterUsers()" aria-label="Хэрэглэгч хайх"/></div>
+              <select class="filter-select" id="userRoleFilter" onchange="filterUsers()" aria-label="Эрхээр шүүх">
+                <option value="">Бүгд</option><option value="user">Хэрэглэгч</option><option value="admin">Админ</option>
+              </select>
+              <button class="btn-sm btn-blue" onclick="openAddUser()">+ Нэмэх</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table><thead><tr><th>НЭР</th><th>ИМЭЙЛ</th><th>СУРГУУЛЬ</th><th>ЗАХИАЛГА</th><th>БҮРТГҮҮЛСЭН</th><th>ЭРХ</th><th>ҮЙЛДЭЛ</th></tr></thead>
+            <tbody id="usersTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOCATIONS -->
+      <div class="page" id="page-locations">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+          <button class="btn-sm btn-blue" onclick="openAddLocation()">+ Байршил нэмэх</button>
+        </div>
+        <div class="cards-grid" id="locationCards"></div>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div class="page" id="page-notifications">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div class="table-title">🔔 Системийн мэдэгдлүүд</div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-sm btn-ghost" onclick="markAllRead()">Бүгдийг уншсан болгох</button>
+            <button class="btn-sm btn-blue" onclick="openSendNotif()">+ Мэдэгдэл илгээх</button>
+          </div>
+        </div>
+        <div class="notif-list" id="notifList" aria-live="polite"></div>
+      </div>
+
+      <div class="page" id="page-contactMessages">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">✉️ Харилцагчийн санал хүсэлт</div>
+            <div class="table-actions">
+              <button class="btn-sm btn-ghost" onclick="renderContactMessages()">Шинэчлэх</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table><thead><tr><th>Огноо</th><th>Нэр</th><th>Холбоо</th><th>Зурвас</th><th>Статус</th></tr></thead>
+            <tbody id="contactMessagesTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="page" id="page-analytics">
+        <div class="stats-row" id="analyticsStats"></div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-title">📈 Захиалгын чиг хандлага</div>
+            <div class="chart-sub">Сүүлийн 30 хоног</div>
+            <div class="bar-chart" id="monthChart" style="height:120px;" aria-label="Сарын захиалгын график"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🏆 Хамгийн их ашиглагдах байршил</div>
+            <div class="chart-sub">Нийт захиалгаар</div>
+            <div id="locationChart" style="margin-top:10px;"></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">📊 Захиалгын дэлгэрэнгүй тайлан</div></div>
+          <div class="table-scroll">
+            <table><thead><tr><th>БАЙРШИЛ</th><th>НИЙТ ЗАХИАЛГА</th><th>ДУУССАН</th><th>ЦУЦЛАГДСАН</th><th>АШИГЛАЛТ %</th><th>ОРШ</th></tr></thead>
+            <tbody id="analyticsTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="page" id="page-payments">
+        <div class="pay-settings-layout">
+          <div class="pay-set-col">
+            <div class="table-card" style="margin-bottom:20px;">
+              <div class="table-header"><div class="table-title">💳 Төлбөрийн тохиргоо</div></div>
+              <div style="padding:24px;">
+                <div class="mf"><label for="ps-price">УГААЛГЫН ҮНЭ (₮)</label><input type="number" id="ps-price" value="2000" min="0"/></div>
+                <div class="pay-toggle-row"><div class="pt-label">Төлбөр идэвхтэй</div><label class="toggle-switch"><input type="checkbox" id="ps-enabled" checked/><span class="toggle-slider"></span></label></div>
+                <div style="font-size:.72rem;font-weight:800;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin:16px 0 10px;">Идэвхтэй аргууд</div>
+                <div class="pay-methods-admin">
+                  <label class="pm-toggle"><input type="checkbox" id="ps-qpay" checked/><span>📱 QPay — Монголын бүх банк</span></label>
+                  <label class="pm-toggle"><input type="checkbox" id="ps-card" checked/><span>💳 Карт — Visa, Mastercard, UnionPay</span></label>
+                  <label class="pm-toggle"><input type="checkbox" id="ps-transfer" checked/><span>🏦 Банк шилжүүлэг</span></label>
+                </div>
+                <button class="btn-sm btn-blue" onclick="savePaySettings()" style="margin-top:18px;padding:10px 24px;">💾 Хадгалах</button>
+              </div>
+            </div>
+            <div class="table-card" style="margin-bottom:20px;">
+              <div class="table-header"><div class="table-title">📱 QPay тохиргоо</div></div>
+              <div style="padding:24px;">
+                <div class="mf"><label for="ps-qmerchant">MERCHANT НЭР</label><input type="text" id="ps-qmerchant" placeholder="Easy Laundry ХААИС"/></div>
+                <div class="mf"><label for="ps-qinvoice">INVOICE CODE</label><input type="text" id="ps-qinvoice" placeholder="EASY_LAUNDRY_HUUCHIN"/></div>
+                <div class="qpay-info-box"><div class="qib-title">🏦 Дэмжигдсэн банкууд (12)</div><div class="qib-banks" id="qibBanks"></div></div>
+                <button class="btn-sm btn-blue" onclick="saveQPaySettings()" style="margin-top:16px;padding:10px 24px;">💾 Хадгалах</button>
+              </div>
+            </div>
+            <div class="table-card">
+              <div class="table-header"><div class="table-title">🏦 Банкны данс</div></div>
+              <div style="padding:24px;">
+                <div class="mf"><label for="ps-bank">БАНК</label>
+                  <select id="ps-bank"><option>Хаан Банк</option><option>Голомт Банк</option><option>ХХБ</option><option>Хас Банк</option><option>Төрийн Банк</option><option>Капитрон Банк</option><option>Чингис Хаан Банк</option><option>Богд Банк</option><option>M Банк</option><option>Most Money</option><option>Pass Банк</option></select>
+                </div>
+                <div class="mf"><label for="ps-bnum">ДАНСНЫ ДУГААР</label><input type="text" id="ps-bnum" placeholder="5000123456"/></div>
+                <div class="mf"><label for="ps-bname">ХҮЛЭЭН АВАГЧ НЭР</label><input type="text" id="ps-bname" placeholder="Easy Laundry ХААИС"/></div>
+                <div class="mf"><label for="ps-bnote">ГҮЙЛГЭЭНИЙ УТГА</label><input type="text" id="ps-bnote" placeholder="Угаалгын захиалга"/></div>
+                <button class="btn-sm btn-blue" onclick="saveBankSettings()" style="margin-top:16px;padding:10px 24px;">💾 Хадгалах</button>
+              </div>
+            </div>
+          </div>
+          <div class="pay-trans-col">
+            <div class="table-card">
+              <div class="table-header">
+                <div class="table-title">💰 Төлбөрийн гүйлгээ</div>
+                <div class="table-actions">
+                  <select class="filter-select" id="payFilter" onchange="filterPayments()" aria-label="Төлбөрийн аргаар шүүх"><option value="">Бүгд</option><option value="qpay">QPay</option><option value="card">Карт</option><option value="transfer">Шилжүүлэг</option></select>
+                  <button class="btn-sm btn-ghost" onclick="exportPayments()">⬇ CSV</button>
+                </div>
+              </div>
+              <div class="pay-stats-mini" id="payStatsMini"></div>
+              <div class="table-scroll">
+                <table><thead><tr><th>КОД</th><th>ХЭРЭГЛЭГЧ</th><th>АРГА</th><th>ДҮН</th><th>ЦАГ</th><th>СТАТУС</th></tr></thead>
+                <tbody id="payTransBody"></tbody></table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div style="max-width:600px;">
+          <div class="table-card" style="margin-bottom:20px;">
+            <div class="table-header"><div class="table-title">⚙️ Ерөнхий тохиргоо</div></div>
+            <div style="padding:24px;">
+              <div class="mf"><label for="sysName">СИСТЕМИЙН НЭР</label><input type="text" value="Easy Laundry" id="sysName"/></div>
+              <div class="mf"><label for="slotDur">ЗАХИАЛГЫН ХУГАЦАА (МИНУТ)</label><input type="number" value="60" id="slotDur"/></div>
+              <div class="mf"><label for="lateLimit">ХОЦРОГДЛЫН ХЯЗГААР (МИНУТ)</label><input type="number" value="10" id="lateLimit"/></div>
+              <div class="mf"><label for="advanceDays">УРЬДЧИЛАН ЗАХИАЛАХ ХУГАЦАА (ХОНОГ)</label><input type="number" value="5" id="advanceDays"/></div>
+              <button class="btn-sm btn-blue" onclick="saveSettings()" style="padding:10px 20px;">Хадгалах</button>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">🔐 Нууц үг солих</div></div>
+            <div style="padding:24px;">
+              <div class="mf"><label for="curPass">ОДООГИЙН НУУЦ ҮГ</label><input type="password" id="curPass" placeholder="••••••••" autocomplete="current-password"/></div>
+              <div class="mf"><label for="newPass">ШИНЭ НУУЦ ҮГ</label><input type="password" id="newPass" placeholder="••••••••" autocomplete="new-password"/></div>
+              <div class="mf"><label for="confPass">БАТАЛГААЖУУЛАХ</label><input type="password" id="confPass" placeholder="••••••••" autocomplete="new-password"/></div>
+              <button class="btn-sm btn-blue" onclick="changePassword()" style="padding:10px 20px;">Солих</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /.content -->
+  </main>
+</div><!-- /#app -->
+
+<script src="admin-script.js"></script>
+</body>
+</html>
